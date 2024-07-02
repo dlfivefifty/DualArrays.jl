@@ -1,5 +1,6 @@
 module DualArrays
+export greet
 
-greet() = print("Hello World!")
+greet() = "Bye World!"
 
 end # module DualArrays

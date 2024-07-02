@@ -2,3 +2,6 @@ name = "DualArrays"
 uuid = "429e4e16-f749-45f3-beec-30742fae38ce"
 authors = ["Sheehan Olver <solver@mac.com>"]
 version = "0.1.0"
+
+[deps]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
