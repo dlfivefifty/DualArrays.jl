@@ -12,9 +12,9 @@ reprents a vector of duals given by
 For now the entries just return the values.
 """
 
-struct DualVector{T} <: AbstractVector{T}
+struct DualVector{T, M <: AbstractMatrix{T}} <: AbstractVector{T}
     value::Vector{T}
-    jacobian::Matrix{T}
+    jacobian::M
 end
 
 end # module DualArrays
