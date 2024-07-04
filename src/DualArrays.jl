@@ -1,7 +1,8 @@
 module DualArrays
 export DualVector
-using LinearAlgebra
-import Base: +, getindex, size, broadcast, axes, broadcasted
+using LinearAlgebra, ForwardDiff
+import Base: +, getindex, size, broadcast, axes, broadcasted, show
+
 """
 reprents a vector of duals given by
     
@@ -15,11 +16,21 @@ struct DualVector{T, M <: AbstractMatrix{T}} <: AbstractVector{T}
     jacobian::M
 end
 
-getindex(x::DualVector,y::Int) = x.value[y]
+function getindex(x::DualVector,y::Int)
+    ForwardDiff.Dual(x.value[y],Tuple(x.jacobian[y,:]))
+end
+
+function getindex(x::DualVector,y::UnitRange)
+    newval = x.value[y]
+    newjac = x.jacobian[y,:]
+    DualVector(newval, newjac)
+end
 size(x::DualVector) = length(x.value)
 axes(x::DualVector) = axes(x.value)
 +(x::DualVector,y::DualVector) = DualVector(x.value + y.value, x.jacobian + y.jacobian)
 
 broadcasted(::typeof(sin),x::DualVector) = DualVector(sin.(x.value),Diagonal(cos.(x.value))*x.jacobian)
+
+show(io::IO,::MIME"text/plain", x::DualVector) = (print(io,x.value); print(io," + "); print(io,x.jacobian);print("𝛜"))
 end
 # module DualArrays
