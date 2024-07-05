@@ -2,6 +2,8 @@ using DualArrays, Test, LinearAlgebra, ForwardDiff, BandedMatrices
 using DualArrays: Dual
 
 @testset "DualArrays" begin
+    @test_throws ArgumentError DualVector([1,2],I(3))
+    
     v = DualVector([1,2, 3], [1 2 3; 4 5 6;7 8 9])
     @test v[1] isa Dual
     @test v[1] == Dual(1,[1,2,3])

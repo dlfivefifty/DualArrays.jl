@@ -22,6 +22,15 @@ For now the entries just return the values.
 struct DualVector{T, M <: AbstractMatrix{T}} <: AbstractVector{Dual{T}}
     value::Vector{T}
     jacobian::M
+    function DualVector(value::Vector{T},jacobian::M) where {T, M <: AbstractMatrix{T}}
+        if(size(jacobian)[1] != length(value))
+            x,y = length(value),size(jacobian)[1]
+            throw(ArgumentError("vector length must match number of rows in jacobian.\n
+            vector length: $x \n
+            no. of jacobian rows: $y"))
+        end
+        new{T,M}(value,jacobian)
+    end
 end
 
 function DualVector(value::AbstractVector, jacobian::AbstractMatrix)
