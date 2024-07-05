@@ -1,6 +1,6 @@
 module DualArrays
 export DualVector
-using LinearAlgebra, ForwardDiff
+using LinearAlgebra, ForwardDiff, ArrayLayouts, BandedMatrices
 import Base: +, getindex, size, broadcast, axes, broadcasted, show, sum
 
 """
@@ -16,13 +16,18 @@ struct DualVector{T, M <: AbstractMatrix{T}} <: AbstractVector{T}
     jacobian::M
 end
 
-function getindex(x::DualVector,y::Int)
-    ForwardDiff.Dual(x.value[y],Tuple(x.jacobian[y,:]))
+function DualVector(value::AbstractVector, jacobian::AbstractMatrix)
+    T = promote_type(eltype(value), eltype(jacobian))
+    DualVector(convert(Vector{T}, value), convert(AbstractMatrix{T}, jacobian))
 end
 
-function getindex(x::DualVector,y::UnitRange)
+function getindex(x::DualVector, y::Int)
+    ForwardDiff.Dual(x.value[y], Tuple(x.jacobian[y,:]))
+end
+
+function getindex(x::DualVector, y::UnitRange)
     newval = x.value[y]
-    newjac = x.jacobian[y,:]
+    newjac = layout_getindex(x.jacobian,y,:)
     DualVector(newval, newjac)
 end
 size(x::DualVector) = length(x.value)

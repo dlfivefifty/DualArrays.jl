@@ -1,4 +1,4 @@
-using DualArrays, Test, LinearAlgebra, ForwardDiff
+using DualArrays, Test, LinearAlgebra, ForwardDiff, BandedMatrices
 
 @testset "DualArrays" begin
     v = DualVector([1,2, 3], [1 2 3; 4 5 6;7 8 9])
@@ -24,4 +24,8 @@ using DualArrays, Test, LinearAlgebra, ForwardDiff
     
     @test sum(x .* y) isa ForwardDiff.Dual
     @test sum(x .* y) == ForwardDiff.Dual(8,32,40,48)
+
+    n = 10
+    v = DualVector(1:n, I(n))
+    @test v[2:end].jacobian isa BandedMatrix
 end
