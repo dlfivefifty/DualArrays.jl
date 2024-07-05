@@ -29,4 +29,7 @@ using DualArrays: Dual
     n = 10
     v = DualVector(1:n, I(n))
     @test v[2:end].jacobian isa BandedMatrix
+
+
+    @test sum(v[1:end-1] .* v[2:end]).partials == ForwardDiff.gradient(v -> sum(v[1:end-1] .* v[2:end]), 1:n)
 end
