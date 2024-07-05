@@ -1,11 +1,12 @@
 using DualArrays, Test, LinearAlgebra, ForwardDiff, BandedMatrices
+using DualArrays: Dual
 
 @testset "DualArrays" begin
     v = DualVector([1,2, 3], [1 2 3; 4 5 6;7 8 9])
-    @test v[1] isa ForwardDiff.Dual
-    @test v[1] == ForwardDiff.Dual(1,1,2,3)
-    @test v[2] == ForwardDiff.Dual(2,4,5,6)
-    @test v[3] == ForwardDiff.Dual(3,7,8,9)
+    @test v[1] isa Dual
+    @test v[1] == Dual(1,[1,2,3])
+    @test v[2] == Dual(2,[4,5,6])
+    @test v[3] == Dual(3,[7,8,9])
     @test_throws BoundsError v[4]
     @test v == DualVector([1,2, 3], [1 2 3; 4 5 6;7 8 9])
 
@@ -22,8 +23,8 @@ using DualArrays, Test, LinearAlgebra, ForwardDiff, BandedMatrices
     @test y == DualVector([2,3],[4 5 6;7 8 9])
     @test x .* y == DualVector([2,6],[6 9 12;26 31 36])
     
-    @test sum(x .* y) isa ForwardDiff.Dual
-    @test sum(x .* y) == ForwardDiff.Dual(8,32,40,48)
+    @test sum(x .* y) isa Dual
+    @test sum(x .* y) == Dual(8,[32,40,48])
 
     n = 10
     v = DualVector(1:n, I(n))

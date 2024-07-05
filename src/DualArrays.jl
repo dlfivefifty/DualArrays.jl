@@ -1,7 +1,15 @@
 module DualArrays
 export DualVector
-using LinearAlgebra, ForwardDiff, ArrayLayouts, BandedMatrices
-import Base: +, getindex, size, broadcast, axes, broadcasted, show, sum
+using LinearAlgebra, ArrayLayouts, BandedMatrices
+import Base: +, ==, getindex, size, broadcast, axes, broadcasted, show, sum
+
+
+struct Dual{T} <: Real
+    value::T
+    partials::Vector{T}
+end
+
+==(a::Dual, b::Dual) = a.value == b.value && a.partials == b.partials
 
 """
 reprents a vector of duals given by
@@ -11,7 +19,7 @@ reprents a vector of duals given by
 For now the entries just return the values.
 """
 
-struct DualVector{T, M <: AbstractMatrix{T}} <: AbstractVector{T}
+struct DualVector{T, M <: AbstractMatrix{T}} <: AbstractVector{Dual{T}}
     value::Vector{T}
     jacobian::M
 end
@@ -22,7 +30,7 @@ function DualVector(value::AbstractVector, jacobian::AbstractMatrix)
 end
 
 function getindex(x::DualVector, y::Int)
-    ForwardDiff.Dual(x.value[y], Tuple(x.jacobian[y,:]))
+    Dual(x.value[y], x.jacobian[y,:])
 end
 
 function getindex(x::DualVector, y::UnitRange)
@@ -44,7 +52,7 @@ end
 
 function sum(x::DualVector)
     n = length(x.value)
-    ForwardDiff.Dual(sum(x.value),Tuple(sum(x.jacobian[:,i]) for i=1:n))
+    Dual(sum(x.value), vec(sum(x.jacobian; dims=1)))
 end
 
 show(io::IO,::MIME"text/plain", x::DualVector) = (print(io,x.value); print(io," + "); print(io,x.jacobian);print("𝛜"))
