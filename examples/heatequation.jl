@@ -19,11 +19,11 @@ U = 500
 U₀ = exp.(collect(-U*ΔU:ΔU:U*ΔU).^2 * -0.5)
 
 #Discrete laplacian with boundary conditions du₀/dt = duₙ/dt = 0
-L = 1/ΔU^2 * BandedMatrix(-1 => [ones(eltype(U₀),length(U₀)-2) ; 0], 0 => [0 ; -2 * ones(eltype(U₀),length(U₀)-2) ; 0], 1 => [0 ; ones(eltype(U₀),length(U₀)-2)])
+L = 1/ΔU^2 * BandedMatrix(-1 => [ones(eltype(U₀), length(U₀)-2) ; 0], 0 => [0 ; -2 * ones(eltype(U₀), length(U₀)-2) ; 0], 1 => [0 ; ones(eltype(U₀), length(U₀)-2)])
 
 function solve_eq(λ)
-    T = (0.0,5.0)
-    prob = ODEProblem(ode!,U₀,T, λ)
+    T = (0.0, 5.0)
+    prob = ODEProblem(ode!, U₀, T, λ)
     solve(prob, Tsit5())
 end
 
