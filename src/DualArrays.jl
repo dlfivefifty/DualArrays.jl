@@ -63,12 +63,15 @@ function sum(x::DualVector)
     Dual(sum(x.value), vec(sum(x.jacobian; dims=1)))
 end
 
+_jacobian(d::Dual) = permutedims(d.partials)
+_jacobian(d::DualVector) = d.jacobian
+
 function vcat(x::Union{Dual, DualVector}...)
-    if(length(x) == 1)
+    if length(x) == 1
         return x[1]
     end
-    value = vcat([d.value for d in x]...)
-    jacobian = vcat([d isa Dual ? permutedims(d.partials) : d.jacobian for d in x]...)
+    value = vcat((d.value for d in x)...)
+    jacobian = vcat((_jacobian(d) for d in x)...)
     DualVector(value,jacobian)
 end
 
