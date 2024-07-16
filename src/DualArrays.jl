@@ -1,8 +1,7 @@
 module DualArrays
 export DualVector
 using LinearAlgebra, ArrayLayouts, BandedMatrices
-import Base: +, ==, getindex, size, broadcast, axes, broadcasted, show, sum
-
+import Base: +, ==, getindex, size, broadcast, axes, broadcasted, show, sum, vcat
 
 struct Dual{T} <: Real
     value::T
@@ -62,6 +61,15 @@ end
 function sum(x::DualVector)
     n = length(x.value)
     Dual(sum(x.value), vec(sum(x.jacobian; dims=1)))
+end
+
+function vcat(x::Union{Dual, DualVector}...)
+    if(length(x) == 1)
+        return x[1]
+    end
+    value = vcat([d.value for d in x]...)
+    jacobian = vcat([d isa Dual ? permutedims(d.partials) : d.jacobian for d in x]...)
+    DualVector(value,jacobian)
 end
 
 show(io::IO,::MIME"text/plain", x::DualVector) = (print(io,x.value); print(io," + "); print(io,x.jacobian);print("𝛜"))
