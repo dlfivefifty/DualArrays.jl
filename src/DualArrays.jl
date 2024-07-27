@@ -52,7 +52,6 @@ size(x::DualVector) = length(x.value)
 axes(x::DualVector) = axes(x.value)
 +(x::DualVector,y::DualVector) = DualVector(x.value + y.value, x.jacobian + y.jacobian)
 
-broadcasted(::typeof(sin),x::DualVector) = DualVector(sin.(x.value),Diagonal(cos.(x.value))*x.jacobian)
 function broadcasted(f::Function,d::DualVector)
     jvals = zeros(eltype(d.value), length(d.value))
     for (i, x) = enumerate(d.value)

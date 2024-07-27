@@ -1,10 +1,11 @@
 using DualArrays, Test, LinearAlgebra, ForwardDiff, BandedMatrices
 using DualArrays: Dual
+using Lux: relu
 
 @testset "DualArrays" begin
     @test_throws ArgumentError DualVector([1,2],I(3))
     
-    v = DualVector([1,2, 3], [1 2 3; 4 5 6;7 8 9])
+    v = DualVector([1.,2, 3], [1. 2 3; 4 5 6;7 8 9])
     @test v[1] isa Dual
     @test v[1] == Dual(1,[1,2,3])
     @test v[2] == Dual(2,[4,5,6])
@@ -13,12 +14,23 @@ using DualArrays: Dual
     @test v == DualVector([1,2, 3], [1 2 3; 4 5 6;7 8 9])
 
     w = v + v
-    @test w == DualVector([2,4,6],[2 4 6;8 10 12;14 16 18])
+    @test w == DualVector([2.,4.,6.],[2. 4 6;8 10 12;14 16 18])
     @test w.jacobian == 2v.jacobian
 
-    @test sin.(v) isa DualVector
-    @test sin.(v).value == [sin(1), sin(2), sin(3)]
-    @test sin.(v).jacobian == Diagonal(cos.(v.value)) * v.jacobian
+    @testset "broadcasting" begin
+        @test sin.(v) isa DualVector
+        @test sin.(v).value == [sin(1), sin(2), sin(3)]
+        @test sin.(v).jacobian == Diagonal(cos.(v.value)) * v.jacobian
+    
+        @test exp.(v) isa DualVector
+        @test exp.(v).value == [exp(1), exp(2), exp(3)]
+        @test exp.(v).jacobian == Diagonal(exp.(v.value)) * v.jacobian
+    
+        @test relu.(v) isa DualVector
+        @test relu.(v).value == [relu(1), relu(2), relu(3)]
+        @test relu.(v).jacobian == Diagonal( 0.5 * (sign.(v.value) .+ 1)) * v.jacobian
+    end
+
 
     x,y = v[1:2],v[2:3]
     @test x == DualVector([1,2],[1 2 3;4 5 6])
@@ -34,4 +46,5 @@ using DualArrays: Dual
 
 
     @test sum(v[1:end-1] .* v[2:end]).partials == ForwardDiff.gradient(v -> sum(v[1:end-1] .* v[2:end]), 1:n)
+    
 end
