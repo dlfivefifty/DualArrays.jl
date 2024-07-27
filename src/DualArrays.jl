@@ -2,7 +2,8 @@ module DualArrays
 export DualVector
 using LinearAlgebra, ArrayLayouts, BandedMatrices
 import Base: +, ==, getindex, size, broadcast, axes, broadcasted, show, sum
-
+import ChainRules: frule, ZeroTangent
+import DiffRules: diffrule
 
 struct Dual{T} <: Real
     value::T
@@ -52,6 +53,16 @@ axes(x::DualVector) = axes(x.value)
 +(x::DualVector,y::DualVector) = DualVector(x.value + y.value, x.jacobian + y.jacobian)
 
 broadcasted(::typeof(sin),x::DualVector) = DualVector(sin.(x.value),Diagonal(cos.(x.value))*x.jacobian)
+function broadcasted(f::Function,d::DualVector)
+    jvals = zeros(eltype(d.value), length(d.value))
+    for (i, x) = enumerate(d.value)
+        _, df = frule((ZeroTangent(), 1),f, x)
+        jvals[i] = df
+    end
+    DualVector(f.(d.value), Diagonal(jvals)*d.jacobian)
+end
+
+
 
 function broadcasted(::typeof(*),x::DualVector,y::DualVector)
     newval = x.value .* y.value
