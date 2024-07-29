@@ -6,14 +6,14 @@
 # via discretisation and Newton's method.
 ##
 
-using LinearAlgebra, ForwardDiff, Plots
+using LinearAlgebra, ForwardDiff, Plots, DualArrays
 
 #Boundary Conditions
 a = 0.1
 b = 0.0
 
 #Time step, Time period and number of x for discretisation.
-ts = 0.01
+ts = 0.001
 Tmax = 5.0
 N = Int(Tmax/ts) - 1
 
@@ -35,14 +35,21 @@ function newton_method_forwarddiff(f, x0, n)
 end
 
 function newton_method_dualvector(f, x0, n)
-    #TODO: Implement using DualVectors.jl
+    x = x0
+    l = length(x0)
+    for i = 1:n
+        ∇f = f(DualVector(x, Matrix(I, l, l))).jacobian
+        x = x - ∇f \ f(x)
+    end
+    x
 end
 
 #Initial guess
 x0 = zeros(Float64, N)
 
 #Solve and plot both solution and LHS ('deviation' from system)
-sol = newton_method_forwarddiff(f, x0, 100)
+@time sol = newton_method_forwarddiff(f, x0, 100)
+@time sol = newton_method_dualvector(f, x0, 100)
 plot(0:ts:Tmax, [a; sol; b])
 plot!(0:ts:Tmax, [0; f(sol); 0])
 

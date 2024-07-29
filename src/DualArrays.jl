@@ -1,10 +1,9 @@
 module DualArrays
 export DualVector
 
-import Base: +, ==, getindex, size, broadcast, axes, broadcasted, show, sum, vcat
+import Base: +, ==, getindex, size, broadcast, axes, broadcasted, show, sum,
+vcat, convert, *
 using LinearAlgebra, ArrayLayouts, BandedMatrices, FillArrays
-
-
 
 struct Dual{T, Partials <: AbstractVector{T}} <: Real
     value::T
@@ -44,6 +43,8 @@ function DualVector(value::AbstractVector, jacobian::AbstractMatrix)
     DualVector(convert(Vector{T}, value), convert(AbstractMatrix{T}, jacobian))
 end
 
+
+
 function getindex(x::DualVector, y::Int)
     Dual(x.value[y], sparse_getindex(x.jacobian,y,:))
 end
@@ -56,6 +57,7 @@ end
 size(x::DualVector) = length(x.value)
 axes(x::DualVector) = axes(x.value)
 +(x::DualVector,y::DualVector) = DualVector(x.value + y.value, x.jacobian + y.jacobian)
+*(x::AbstractMatrix, y::DualVector) = DualVector(x * y.value, x * y.jacobian)
 
 broadcasted(::typeof(sin),x::DualVector) = DualVector(sin.(x.value),Diagonal(cos.(x.value))*x.jacobian)
 
@@ -71,7 +73,11 @@ function sum(x::DualVector)
 end
 
 _jacobian(d::Dual) = permutedims(d.partials)
-_jacobian(d::DualVector) = d.jacobian
+_jacobian(d::DualVector, ::Int) = d.jacobian
+_jacobian(x::Number, N::Int) = zeros(typeof(x), 1, N)
+
+_value(d::DualVector) = d.value
+_value(x::Number) = x
 
 function vcat(x::Union{Dual, DualVector}...)
     if length(x) == 1
@@ -80,6 +86,16 @@ function vcat(x::Union{Dual, DualVector}...)
     value = vcat((d.value for d in x)...)
     jacobian = vcat((_jacobian(d) for d in x)...)
     DualVector(value,jacobian)
+end
+
+_size(x::Real) = 1
+_size(x::DualVector) = size(x)
+
+function vcat(x::Union{Real, DualVector}...)
+    cols = max((_size(i) for i in x)...)
+    val = vcat((_value(i) for i in x)...)
+    jac = vcat((_jacobian(i, cols) for i in x)...)
+    DualVector(val, jac)
 end
 
 show(io::IO,::MIME"text/plain", x::DualVector) = (print(io,x.value); print(io," + "); print(io,x.jacobian);print("𝛜"))
