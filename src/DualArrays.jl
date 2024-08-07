@@ -1,14 +1,18 @@
 module DualArrays
 export DualVector
-using LinearAlgebra, ArrayLayouts, BandedMatrices
+using LinearAlgebra, ArrayLayouts, BandedMatrices, FillArrays
 import Base: +, ==, getindex, size, broadcast, axes, broadcasted, show, sum, vcat
 
-struct Dual{T} <: Real
+struct Dual{T, Partials <: AbstractVector{T}} <: Real
     value::T
-    partials::Vector{T}
+    partials::Partials
 end
 
 ==(a::Dual, b::Dual) = a.value == b.value && a.partials == b.partials
+
+sparse_getindex(a...) = layout_getindex(a...)
+sparse_getindex(D::Diagonal, k::Integer, ::Colon) = OneElement(D.diag[k], k, size(D,2))
+sparse_getindex(D::Diagonal, ::Colon, j::Integer) = OneElement(D.diag[j], j, size(D,1))
 
 """
 reprents a vector of duals given by
@@ -38,12 +42,12 @@ function DualVector(value::AbstractVector, jacobian::AbstractMatrix)
 end
 
 function getindex(x::DualVector, y::Int)
-    Dual(x.value[y], x.jacobian[y,:])
+    Dual(x.value[y], sparse_getindex(x.jacobian,y,:))
 end
 
 function getindex(x::DualVector, y::UnitRange)
     newval = x.value[y]
-    newjac = layout_getindex(x.jacobian,y,:)
+    newjac = sparse_getindex(x.jacobian,y,:)
     DualVector(newval, newjac)
 end
 size(x::DualVector) = length(x.value)
