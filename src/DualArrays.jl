@@ -2,7 +2,7 @@ module DualArrays
 export DualVector
 
 import Base: +, ==, getindex, size, broadcast, axes, broadcasted, show, sum,
-vcat, convert, *
+             vcat, convert, *
 using LinearAlgebra, ArrayLayouts, BandedMatrices, FillArrays
 
 struct Dual{T, Partials <: AbstractVector{T}} <: Real
