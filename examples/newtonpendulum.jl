@@ -6,6 +6,7 @@
 # via discretisation and Newton's method.
 ##
 
+
 using LinearAlgebra, ForwardDiff, Plots, DualArrays, FillArrays
 
 #Boundary Conditions
@@ -14,6 +15,7 @@ b = 0.0
 
 #Time step, Time period and number of x for discretisation.
 ts = 0.1
+
 Tmax = 5.0
 N = Int(Tmax/ts) - 1
 

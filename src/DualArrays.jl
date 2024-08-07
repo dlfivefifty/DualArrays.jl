@@ -2,9 +2,10 @@ module DualArrays
 export DualVector
 
 import Base: +, ==, getindex, size, broadcast, axes, broadcasted, show, sum,
-vcat, convert, *, -, ^
+             vcat, convert, *, -, ^
 using LinearAlgebra, ArrayLayouts, BandedMatrices, FillArrays
 import ChainRules: frule, ZeroTangent
+
 
 struct Dual{T, Partials <: AbstractVector{T}} <: Real
     value::T
@@ -43,6 +44,8 @@ function DualVector(value::AbstractVector, jacobian::AbstractMatrix)
     T = promote_type(eltype(value), eltype(jacobian))
     DualVector(convert(Vector{T}, value), convert(AbstractMatrix{T}, jacobian))
 end
+
+
 
 function getindex(x::DualVector, y::Int)
     Dual(x.value[y], sparse_getindex(x.jacobian,y,:))
@@ -105,6 +108,7 @@ end
 
 _jacobian(d::Dual) = permutedims(d.partials)
 _jacobian(d::DualVector) = d.jacobian
+_jacobian(d::DualVector, ::Int) = d.jacobian
 _jacobian(x::Number, N::Int) = zeros(typeof(x), 1, N)
 
 _value(d::DualVector) = d.value
