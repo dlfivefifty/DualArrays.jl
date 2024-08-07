@@ -18,7 +18,7 @@ function model_loss(w)
 end
 
 function gradient_descent_sparse(n, lr = 0.01)
-    weights = ones(Float64, 2 * N)
+    weights = ones(2 * N)
     for i = 1:n
         dw = DualVector(weights, Eye{Float64}(2*N))
         grads = model_loss(dw).partials
@@ -28,7 +28,7 @@ function gradient_descent_sparse(n, lr = 0.01)
 end
 
 function gradient_descent_dense(n, lr = 0.01)
-    weights = ones(Float64, 2 * N)
+    weights = ones(2 * N)
     for i = 1:n
         dw = DualVector(weights, Matrix(I, 2*N, 2*N))
         grads = model_loss(dw).partials
@@ -37,8 +37,8 @@ function gradient_descent_dense(n, lr = 0.01)
     model(weights[1:N], weights[(N + 1):end], data)
 end
 
-@time densesol = gradient_descent_dense(100)
-@time sparsesol = gradient_descent_sparse(100)
+@time densesol = gradient_descent_dense(500)
+@time sparsesol = gradient_descent_sparse(500)
 @test densesol == sparsesol
 @test sparsesol ≈ exp.(data) rtol = 1e-2
 

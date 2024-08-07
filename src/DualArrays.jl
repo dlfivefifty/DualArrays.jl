@@ -2,9 +2,13 @@ module DualArrays
 export DualVector
 
 import Base: +, ==, getindex, size, broadcast, axes, broadcasted, show, sum,
-             vcat, convert, *, -, ^
+             vcat, convert, *, -, ^, /
 using LinearAlgebra, ArrayLayouts, BandedMatrices, FillArrays
 import ChainRules: frule, ZeroTangent
+
+
+# TODO: support non-banded
+sparsevcat(As...) = vcat(convert.(BandedMatrix,  As)...)
 
 
 struct Dual{T, Partials <: AbstractVector{T}} <: Real
@@ -13,6 +17,10 @@ struct Dual{T, Partials <: AbstractVector{T}} <: Real
 end
 
 ==(a::Dual, b::Dual) = a.value == b.value && a.partials == b.partials
+for op in (:+, :-, :/)
+    @eval $op(a::Dual, k::Real) = Dual($op(a.value, k), a.partials)
+end
+
 
 sparse_getindex(a...) = layout_getindex(a...)
 sparse_getindex(D::Diagonal, k::Integer, ::Colon) = OneElement(D.diag[k], k, size(D,2))
@@ -67,6 +75,8 @@ axes(x::DualVector) = axes(x.value)
 -(x::Vector,y::DualVector) = DualVector(x - y.value, -y.jacobian)
 *(x::AbstractMatrix, y::DualVector) = DualVector(x * y.value, x * y.jacobian)
 *(x::Number, y::DualVector) = DualVector(x * y.value, x * y.jacobian)
+/(x::DualVector, y::Number) = DualVector(x.value / y, x.jacobian/ y)
+
 
 function broadcasted(f::Function,d::DualVector)
     jvals = zeros(eltype(d.value), length(d.value))
@@ -127,14 +137,21 @@ function vcat(x::Union{Dual, DualVector}...)
     DualVector(value,jacobian)
 end
 
+function vcat(a::Dual ,x::DualVector, b::Dual)
+    val = vcat(a.value, x.value, b.value)
+    jac = sparsevcat(_jacobian(a), x.jacobian, _jacobian(b))
+    DualVector(val, jac)
+end
+
 
 function vcat(a::Real ,x::DualVector, b::Real)
     cols = size(x.jacobian,2)
     val = vcat(a, x.value, b)
-    jac = vcat(_jacobian(a, cols), x.jacobian, _jacobian(b, cols))
+    jac = sparsevcat(_jacobian(a, cols), x.jacobian, _jacobian(b, cols))
     DualVector(val, jac)
 end
 
 show(io::IO,::MIME"text/plain", x::DualVector) = (print(io,x.value); print(io," + "); print(io,x.jacobian);print("𝛜"))
+show(io::IO,::MIME"text/plain", x::Dual) = (print(io,x.value); print(io," + "); print(io,x.partials');print("𝛜"))
 end
 # module DualArrays
