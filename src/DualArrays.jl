@@ -57,7 +57,7 @@ function getindex(x::DualVector, y::UnitRange)
     newjac = layout_getindex(x.jacobian,y,:)
     DualVector(newval, newjac)
 end
-size(x::DualVector) = length(x.value)
+size(x::DualVector) = size(x.value)
 axes(x::DualVector) = axes(x.value)
 +(x::DualVector,y::DualVector) = DualVector(x.value + y.value, x.jacobian + y.jacobian)
 -(x::DualVector,y::DualVector) = DualVector(x.value - y.value, x.jacobian - y.jacobian)
@@ -95,11 +95,15 @@ function broadcasted(::typeof(*),x::DualVector,y::Vector)
     DualVector(newval,newjac)
 end
 
-function ^(x::DualVector,n::Int64)
+function broadcasted(::typeof(^),x::DualVector,n::Int)
     newval = x.value .^ n
     newjac = n * x.value .^ (n - 1) .* x.jacobian
     DualVector(newval,newjac)
 end
+
+broadcasted(::typeof(Base.literal_pow), ::typeof(^), x::DualVector, ::Val{n}) where n = broadcasted(^, x, n)
+
+
 
 function sum(x::DualVector)
     n = length(x.value)

@@ -22,7 +22,7 @@ N = Int(Tmax/ts) - 1
 #LHS of ode
 function f(x)
     n = length(x)
-    D = Tridiagonal([ones(Float64, n) / ts ; 0.0], [1.0; -2ones(Float64, n) / ts; 1.0], [0.0; ones(Float64, n) / ts])
+    D = Tridiagonal([ones(n) / ts ; 0.0], [1.0; -2ones(n) / ts; 1.0], [0.0; ones(n) / ts])
     (D * [a; x; b])[2:end-1] + sin.(x)
 end
 

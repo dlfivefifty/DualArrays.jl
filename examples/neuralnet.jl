@@ -14,7 +14,7 @@ function model(a, b, x)
 end
 
 function model_loss(w)
-     sum((model(w[1:N], w[(N+1):end], data) - exp.(data)) ^ 2)
+     sum((model(w[1:N], w[(N+1):end], data) - exp.(data)) .^ 2)
 end
 
 function gradient_descent_sparse(n, lr = 0.01)

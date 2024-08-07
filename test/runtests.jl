@@ -33,7 +33,7 @@ using Lux: relu
         x = v.value + v - v.value
         @test x == v
 
-        @test v ^ 2 == DualVector([1, 4, 9], [2 4 6;16 20 24; 42 48 54])
+        @test v .^ 2 == DualVector([1, 4, 9], [2 4 6;16 20 24; 42 48 54])
 
         x,y = v[1:2],v[2:3]
         @test x .* y == DualVector([2,6],[6 9 12;26 31 36])
