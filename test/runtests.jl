@@ -1,4 +1,5 @@
-using DualArrays, Test, LinearAlgebra, ForwardDiff, BandedMatrices
+using DualArrays, Test, LinearAlgebra, BandedMatrices
+using ForwardDiff
 using DualArrays: Dual
 using Lux: relu
 
@@ -69,6 +70,7 @@ using Lux: relu
         @test vcat(x) == x
         @test vcat(x, x) == DualVector([1, 1], [1 2 3;1 2 3])
         @test vcat(x, y) == DualVector([1, 2, 3], [1 2 3;4 5 6;7 8 9])
+        @test vcat(1, y, 2) == DualVector([1,2,3,2], [0 0 0; 4 5 6; 7 8 9; 0 0 0])
     end
 
 end

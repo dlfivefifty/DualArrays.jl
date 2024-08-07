@@ -113,7 +113,7 @@ end
 _jacobian(d::Dual) = permutedims(d.partials)
 _jacobian(d::DualVector) = d.jacobian
 _jacobian(d::DualVector, ::Int) = d.jacobian
-_jacobian(x::Number, N::Int) = zeros(typeof(x), 1, N)
+_jacobian(x::Number, N::Int) = Zeros{typeof(x)}(1, N)
 
 _value(d::DualVector) = d.value
 _value(x::Number) = x
@@ -127,11 +127,9 @@ function vcat(x::Union{Dual, DualVector}...)
     DualVector(value,jacobian)
 end
 
-_size(x::Real) = 1
-_size(x::DualVector) = size(x)
 
 function vcat(a::Real ,x::DualVector, b::Real)
-    cols = max((_size(i) for i in x)...)
+    cols = size(x.jacobian,2)
     val = vcat(a, x.value, b)
     jac = vcat(_jacobian(a, cols), x.jacobian, _jacobian(b, cols))
     DualVector(val, jac)

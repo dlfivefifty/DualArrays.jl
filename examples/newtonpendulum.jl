@@ -47,7 +47,7 @@ function newton_method_dualvector(f, x0, n)
 end
 
 #Initial guess
-x0 = zeros(Float64, N)
+x0 = zeros(N)
 
 #Solve and plot both solution and LHS ('deviation' from system)
 @time sol = newton_method_forwarddiff(f, x0, 100)
