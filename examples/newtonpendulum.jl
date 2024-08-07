@@ -6,14 +6,14 @@
 # via discretisation and Newton's method.
 ##
 
-using LinearAlgebra, ForwardDiff, Plots, DualArrays
+using LinearAlgebra, ForwardDiff, Plots, DualArrays, FillArrays
 
 #Boundary Conditions
 a = 0.1
 b = 0.0
 
 #Time step, Time period and number of x for discretisation.
-ts = 0.001
+ts = 0.1
 Tmax = 5.0
 N = Int(Tmax/ts) - 1
 
@@ -38,7 +38,7 @@ function newton_method_dualvector(f, x0, n)
     x = x0
     l = length(x0)
     for i = 1:n
-        ∇f = f(DualVector(x, Matrix(I, l, l))).jacobian
+        ∇f = f(DualVector(x, Eye(l))).jacobian
         x = x - ∇f \ f(x)
     end
     x
