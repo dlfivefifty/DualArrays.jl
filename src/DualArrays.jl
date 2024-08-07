@@ -63,6 +63,7 @@ axes(x::DualVector) = axes(x.value)
 +(x::Vector,y::DualVector) = DualVector(y.value + x, y.jacobian)
 -(x::Vector,y::DualVector) = DualVector(x - y.value, -y.jacobian)
 *(x::AbstractMatrix, y::DualVector) = DualVector(x * y.value, x * y.jacobian)
+*(x::Number, y::DualVector) = DualVector(x * y.value, x * y.jacobian)
 
 function broadcasted(f::Function,d::DualVector)
     jvals = zeros(eltype(d.value), length(d.value))
@@ -103,7 +104,7 @@ function sum(x::DualVector)
 end
 
 _jacobian(d::Dual) = permutedims(d.partials)
-_jacobian(d::DualVector, ::Int) = d.jacobian
+_jacobian(d::DualVector) = d.jacobian
 _jacobian(x::Number, N::Int) = zeros(typeof(x), 1, N)
 
 _value(d::DualVector) = d.value
@@ -121,10 +122,10 @@ end
 _size(x::Real) = 1
 _size(x::DualVector) = size(x)
 
-function vcat(x::Union{Real, DualVector}...)
+function vcat(a::Real ,x::DualVector, b::Real)
     cols = max((_size(i) for i in x)...)
-    val = vcat((_value(i) for i in x)...)
-    jac = vcat((_jacobian(i, cols) for i in x)...)
+    val = vcat(a, x.value, b)
+    jac = vcat(_jacobian(a, cols), x.jacobian, _jacobian(b, cols))
     DualVector(val, jac)
 end
 
