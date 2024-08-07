@@ -40,5 +40,6 @@ end
 @time densesol = gradient_descent_dense(100)
 @time sparsesol = gradient_descent_sparse(100)
 @test densesol == sparsesol
+@test sparsesol ≈ exp.(data) rtol = 1e-2
 
 
