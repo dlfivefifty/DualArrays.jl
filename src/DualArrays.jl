@@ -2,13 +2,14 @@ module DualArrays
 export DualVector
 
 import Base: +, ==, getindex, size, broadcast, axes, broadcasted, show, sum,
-vcat, convert, *
+vcat, convert, *, -, ^
 using LinearAlgebra, ArrayLayouts, BandedMatrices, FillArrays
+import ChainRules: frule, ZeroTangent
 
 struct Dual{T, Partials <: AbstractVector{T}} <: Real
     value::T
     partials::Partials
-
+end
 
 ==(a::Dual, b::Dual) = a.value == b.value && a.partials == b.partials
 
@@ -56,6 +57,11 @@ end
 size(x::DualVector) = length(x.value)
 axes(x::DualVector) = axes(x.value)
 +(x::DualVector,y::DualVector) = DualVector(x.value + y.value, x.jacobian + y.jacobian)
+-(x::DualVector,y::DualVector) = DualVector(x.value - y.value, x.jacobian - y.jacobian)
++(x::DualVector,y::Vector) = DualVector(x.value + y, x.jacobian)
+-(x::DualVector,y::Vector) = DualVector(x.value - y, x.jacobian)
++(x::Vector,y::DualVector) = DualVector(y.value + x, y.jacobian)
+-(x::Vector,y::DualVector) = DualVector(x - y.value, -y.jacobian)
 *(x::AbstractMatrix, y::DualVector) = DualVector(x * y.value, x * y.jacobian)
 
 function broadcasted(f::Function,d::DualVector)
@@ -70,6 +76,24 @@ end
 function broadcasted(::typeof(*),x::DualVector,y::DualVector)
     newval = x.value .* y.value
     newjac = x.value .* y.jacobian + y.value .* x.jacobian
+    DualVector(newval,newjac)
+end
+
+function broadcasted(::typeof(*),x::Vector,y::DualVector)
+    newval = x .* y.value
+    newjac = x .* y.jacobian
+    DualVector(newval,newjac)
+end
+
+function broadcasted(::typeof(*),x::DualVector,y::Vector)
+    newval = x.value .* y
+    newjac = y .* x.jacobian
+    DualVector(newval,newjac)
+end
+
+function ^(x::DualVector,n::Int64)
+    newval = x.value .^ n
+    newjac = n * x.value .^ (n - 1) .* x.jacobian
     DualVector(newval,newjac)
 end
 
