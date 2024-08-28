@@ -1,4 +1,4 @@
-using DualArrays, Test, LinearAlgebra, ForwardDiff, BandedMatrices
+using DualArrays, Test, LinearAlgebra, ForwardDiff, BandedMatrices, ComponentArrays
 using DualArrays: Dual
 
 @testset "DualArrays" begin
@@ -39,4 +39,10 @@ using DualArrays: Dual
     @test vcat(x) == x
     @test vcat(x, x) == DualVector([1, 1], [1 2 3;1 2 3])
     @test vcat(x, y) == DualVector([1, 2, 3], [1 2 3;4 5 6;7 8 9])
+
+    @testset "promote" begin
+        x = DualVector([5,6], I(2))
+        y = [7,8]
+        @test [x,y] isa Vector{<:DualVector}
+    end
 end
