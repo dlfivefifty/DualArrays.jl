@@ -2,15 +2,20 @@ module DualArrays
 export DualVector
 
 import Base: +, ==, getindex, size, broadcast, axes, broadcasted, show, sum,
-             vcat, convert, *
+             vcat, convert, *, promote_rule
 using LinearAlgebra, ArrayLayouts, BandedMatrices, FillArrays
+
+import FillArrays: OneElementVector
 
 struct Dual{T, Partials <: AbstractVector{T}} <: Real
     value::T
     partials::Partials
 end
 
+
 ==(a::Dual, b::Dual) = a.value == b.value && a.partials == b.partials
+
+
 
 sparse_getindex(a...) = layout_getindex(a...)
 sparse_getindex(D::Diagonal, k::Integer, ::Colon) = OneElement(D.diag[k], k, size(D,2))
@@ -24,7 +29,10 @@ reprents a vector of duals given by
 For now the entries just return the values.
 """
 
-struct DualVector{T, M <: AbstractMatrix{T}} <: AbstractVector{Dual{T}}
+partials_type(::Type{Matrix{T}}) where T = Vector{T}
+partials_type(::Type{<:Diagonal{T}}) where T = OneElementVector{T}
+
+struct DualVector{T, M <: AbstractMatrix{T}, Partials} <: AbstractVector{Dual{T, Partials}}
     value::Vector{T}
     jacobian::M
     function DualVector(value::Vector{T},jacobian::M) where {T, M <: AbstractMatrix{T}}
@@ -34,7 +42,7 @@ struct DualVector{T, M <: AbstractMatrix{T}} <: AbstractVector{Dual{T}}
             vector length: $x \n
             no. of jacobian rows: $y"))
         end
-        new{T,M}(value,jacobian)
+        new{T,M,partials_type(M)}(value,jacobian)
     end
 end
 
@@ -44,6 +52,18 @@ function DualVector(value::AbstractVector, jacobian::AbstractMatrix)
 end
 
 
+####
+# convert/promotion
+####
+
+# TODO: convert_eltype for M
+promote_rule(::Type{Vector{T}}, ::Type{DualVector{V,M}}) where {T,V,M} = DualVector{promote_type(T,V),M}
+convert(::Type{DualVector{V,M}}, x::AbstractVector{T}) where {T,V,M} = DualVector(convert(AbstractVector{V}, x), convert(M, Zeros(axes(x,1), axes(x,1))))
+
+
+#####
+# getindex/setindex!
+####
 
 function getindex(x::DualVector, y::Int)
     Dual(x.value[y], sparse_getindex(x.jacobian,y,:))
