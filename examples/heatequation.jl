@@ -9,7 +9,7 @@
 # Compare performance and results.
 ##
 
-using LinearAlgebra, BandedMatrices, DifferentialEquations, Plots, 
+using LinearAlgebra, BandedMatrices, OrdinaryDiffEqs, Plots, 
 ForwardDiff
 
 U = 500
