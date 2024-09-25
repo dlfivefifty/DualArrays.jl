@@ -1,4 +1,5 @@
-using DualArrays, Test, LinearAlgebra, BandedMatrices, ForwardDiff, ComponentArrays
+using DualArrays, Test, LinearAlgebra, BandedMatrices, ForwardDiff,
+BlockArrays
 using DualArrays: Dual
 using Lux: relu
 
@@ -99,6 +100,25 @@ using Lux: relu
     end
 
     @testset "BlockMatrixTensor" begin
-        
+        @testset "constructors" begin
+            x = BlockMatrixTensor(BlockArray(ones(4, 4), [2, 2], [2, 2]))
+            y = BlockMatrixTensor(ones(2, 2, 2, 2))
+            @test x isa BlockMatrixTensor
+            @test y isa BlockMatrixTensor
+            @test x == y
+        end
+        @testset "broadcasting" begin
+            y = BlockMatrixTensor(ones(2, 2, 2, 2))
+            z = BlockArray(
+                [fill(1,2,2) fill(2,2,2); fill(3,2,2) fill(4,2,2)],
+                [2, 2],
+                [2, 2]
+            )
+            @test ([1 2;3 4] .* y).data == z
+            @test reshape([3], 1, 1) .* y == 3 * y
+            @test ([1 2] .* y).data == BlockArray([fill(1,4,2) fill(2,4,2)], [2, 2], [2, 2])
+            @test ([1 2]' .* y).data == BlockArray([fill(1,2,4); fill(2,2,4)], [2, 2], [2, 2])
+            @test_throws DimensionMismatch [1 2;3 4;5 6] .* y
+        end
     end
 end

@@ -26,34 +26,63 @@ function show(io::IO,m::MIME"text/plain", x::BlockMatrixTensor)
 end
 show(io::IO,x::BlockMatrixTensor) = show(io, x.data)
 
-#Blockwise broadcast
-function broadcasted(f::Function, x::BlockMatrixTensor, y::AbstractMatrix)
-    z = undef
-    if size(y, 1) == 1
-        z = repeat(y, blocksize(x.data, 1))
-    elseif size(y, 2) == 1
-        z = repeat(y, 1, blocksize(x.data, 2))
-    else
-        z = copy(y)
-    end
-    n, m = size(z)
-    blocked = mortar([fill(z[i,j], size(x.data[Block(1,1)])) for i = 1:n, j = 1:m])
-    BlockMatrixTensor(f.(blocked, x.data))
+# Blockwise broadcast
+for op in (:*, :/)
+    @eval $op(x::BlockMatrixTensor, y::Number) = BlockMatrixTensor($op(x.data, y))
+    @eval $op(x::Number, y::BlockMatrixTensor) = BlockMatrixTensor($op(x, y.data))
 end
 
-function broadcasted(f::Function, x::AbstractMatrix, y::BlockMatrixTensor)
-    z = undef
-    if size(x, 1) == 1
-        z = repeat(x, blocksize(y.data, 1))
-    elseif size(x, 2) == 1
-        z = repeat(y, 1, blocksize(y.data, 2))
+function broadcasted(f::Function, x::BlockMatrixTensor{T}, y::AbstractMatrix) where {T}
+    ret = BlockArray{T}(undef, blocksizes(x.data)...)
+    n, m = blocksize(x.data)
+    if blocksize(x.data) == size(y)
+        for i = 1:n, j = 1:m
+            ret[Block(i,j)] = f.(y[i,j], x.data[Block(i,j)])
+        end
+    elseif size(y) == (1, 1)
+        f.(y[1,1], x.data)
+    elseif size(y) == (1, m)
+        for j = 1:m
+            ret[:, Block(j)] = f.(y[1,j], x.data[:, Block(j)])
+        end
+    elseif size(y) == (n, 1)
+        for i = 1:n
+            ret[Block(i), :] = f.(y[i, 1], x.data[Block(i), :])
+        end
     else
-        z = copy(x)
+        a = size(x)
+        b = size(y)
+        throw(DimensionMismatch("Invalid dimensions for broadcasting. Got $a, $b."))
     end
-    n, m = size(z)
-    blocked = mortar([fill(z[i,j], size(y.data[Block(1,1)])) for i = 1:n, j = 1:m])
-    BlockMatrixTensor(f.(blocked, y.data))
+    BlockMatrixTensor(ret)
 end
+
+function broadcasted(f::Function, x::AbstractMatrix, y::BlockMatrixTensor{T}) where {T}
+    ret = BlockArray{T}(undef, blocksizes(y.data)...)
+    n, m = blocksize(y.data)
+    if blocksize(y.data) == size(x)
+        for i = 1:n, j = 1:m
+            ret[Block(i,j)] = f.(x[i,j], y.data[Block(i,j)])
+        end
+    elseif size(x) == (1, 1)
+        f.(x[1,1], y.data)
+    elseif size(x) == (1, m)
+        for j = 1:m
+            ret[:, Block(j)] = f.(x[1,j], y.data[:, Block(j)])
+        end
+    elseif size(x) == (n, 1)
+        for i = 1:n
+            ret[Block(i), :] = f.(x[i, 1], y.data[Block(i), :])
+        end
+    else
+        a = size(y)
+        b = size(x)
+        throw(DimensionMismatch("Invalid dimensions for broadcasting. Got $a, $b."))
+    end
+    BlockMatrixTensor(ret)
+end
+
+
 
 function sum(x::BlockMatrixTensor{T}; dims = Colon()) where {T}
     if dims == 1:2
