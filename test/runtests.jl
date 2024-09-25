@@ -97,4 +97,8 @@ using Lux: relu
             @test relu.(y*[1,-1] + z).jacobian == t[2]
         end
     end
+
+    @testset "BlockMatrixTensor" begin
+        
+    end
 end

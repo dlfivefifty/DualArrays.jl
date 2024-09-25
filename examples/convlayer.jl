@@ -8,13 +8,11 @@ function convlayer(img, ker, xstride = 1, ystride = 1)
     n2, m2 = size(img)
     n3, m3 = div(n2-n+1,xstride), div(m2-m+1,ystride)
     fmap = zeros(promote_type(eltype(img), t), n3, m3)
-
     #Apply kernel to section of image
     for i= 1:xstride:n3,j = 1:ystride:m3
         ft = img[i:i+n-1,j:j+m-1] .* ker
         fmap[i,j] = sum(ft)
     end
-
     fmap
 end
 
@@ -23,8 +21,12 @@ function softmax(x)
     exp.(x) / s
 end
 
-function dense_layer(f, W, b, x)
-    f(W*x + b)
+function dense_layer(W, b, x, f::Function = identity)
+    ret = W*x
+    println("Multiplication complete")
+    ret += b
+    println("Addition Complete")
+    f(ret)
 end
 
 function cross_entropy(x, y)
@@ -36,9 +38,12 @@ function model_loss(x, y, w)
     weights = reshape(w[10:6769], 10, 676)
     biases = w[6770:6779]
     l1 = vec(DualMatrix(convlayer(x, ker)))
-    l2 = dense_layer(softmax, weights, biases, l1)
+    println("Conv layer complete")
+    l2 = dense_layer(weights, biases, l1, softmax)
+    println("Dense Layer complete")
     target = OneElement(1, y+1, 10)
     loss = cross_entropy(l2, target)
+    println("Loss complete")
     loss.value, loss.partials
 end
 
