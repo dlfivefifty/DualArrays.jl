@@ -10,14 +10,14 @@ function BlockMatrixTensor(x::AbstractArray{T, 4}) where {T}
     n, m, s, t = size(x)
     data = BlockArray(zeros(T, n * s, m * t), fill(s, n), fill(t, m))
     for i = 1:n, j = 1:m
-        data[Block(i,j)] = x[i,j,:,:]
+        view(data, Block(i,j)) .= x[i,j,:,:] 
     end
     BlockMatrixTensor(data)
 end
 
-size(x::BlockMatrixTensor) = (blocksize(x.data)..., size(x.data[Block(1), Block(1)])...)
+size(x::BlockMatrixTensor) = (blocksize(x.data)..., blocksizes(x.data, 1)...)
 
-getindex(x::BlockMatrixTensor, a::Int, b::Int, c, d) = sparse_getindex(x.data[Block(a), Block(b)], c, d)
+getindex(x::BlockMatrixTensor, a::Int, b::Int, c, d) = sparse_getindex(x.data[Block(a, b)], c, d)
 getindex(x::BlockMatrixTensor, a::UnitRange, b::UnitRange, ::Colon, ::Colon) = BlockMatrixTensor(x.data[Block.(a),Block.(b)])
 
 function show(io::IO,m::MIME"text/plain", x::BlockMatrixTensor)
@@ -37,17 +37,17 @@ function broadcasted(f::Function, x::BlockMatrixTensor{T}, y::AbstractMatrix) wh
     n, m = blocksize(x.data)
     if blocksize(x.data) == size(y)
         for i = 1:n, j = 1:m
-            ret[Block(i,j)] = f.(y[i,j], x.data[Block(i,j)])
+            view(ret, Block(i,j)) .= f.(y[i,j], x.data[Block(i,j)])
         end
     elseif size(y) == (1, 1)
-        f.(y[1,1], x.data)
+        f.(y[1,1], ret)
     elseif size(y) == (1, m)
         for j = 1:m
-            ret[:, Block(j)] = f.(y[1,j], x.data[:, Block(j)])
+            view(ret, :, Block(j)) .= f.(y[1,j], x.data[:, Block(j)])
         end
     elseif size(y) == (n, 1)
         for i = 1:n
-            ret[Block(i), :] = f.(y[i, 1], x.data[Block(i), :])
+            view(ret, Block(i), :) .= f.(y[i, 1], x.data[Block(i), :])
         end
     else
         a = size(x)
@@ -62,17 +62,17 @@ function broadcasted(f::Function, x::AbstractMatrix, y::BlockMatrixTensor{T}) wh
     n, m = blocksize(y.data)
     if blocksize(y.data) == size(x)
         for i = 1:n, j = 1:m
-            ret[Block(i,j)] = f.(x[i,j], y.data[Block(i,j)])
+            view(ret, Block(i,j)) .= f.(x[i,j], y.data[Block(i,j)])
         end
     elseif size(x) == (1, 1)
-        f.(x[1,1], y.data)
+        f.(x[1,1], ret)
     elseif size(x) == (1, m)
         for j = 1:m
-            ret[:, Block(j)] = f.(x[1,j], y.data[:, Block(j)])
+            view(ret, :, Block(j)) .= f.(x[1,j], y.data[:, Block(j)])
         end
     elseif size(x) == (n, 1)
         for i = 1:n
-            ret[Block(i), :] = f.(x[i, 1], y.data[Block(i), :])
+            view(ret, Block(i), :) .= f.(x[i, 1], y.data[Block(i), :])
         end
     else
         a = size(y)
@@ -81,8 +81,6 @@ function broadcasted(f::Function, x::AbstractMatrix, y::BlockMatrixTensor{T}) wh
     end
     BlockMatrixTensor(ret)
 end
-
-
 
 function sum(x::BlockMatrixTensor{T}; dims = Colon()) where {T}
     if dims == 1:2
@@ -94,9 +92,9 @@ function sum(x::BlockMatrixTensor{T}; dims = Colon()) where {T}
         ret
     elseif dims == 2
         n, m, s, t = size(x)
-        ret = BlockArray(zeros(T, n*s, t), fill(s, n), fill(t, 1))
+        ret = x.data[Block.(1:n), Block(1)] * 0
         for i = 1:n, j = 1:m
-            ret[Block(i,1)] += x.data[Block(i,j)]
+            view(ret, Block(i,1)) .+= x.data[Block(i,j)]
         end
         BlockMatrixTensor(ret)
     end

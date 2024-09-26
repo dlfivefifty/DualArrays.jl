@@ -37,6 +37,7 @@ function model_loss(x, y, w)
     ker = reshape(w[1:9], 3, 3)
     weights = reshape(w[10:6769], 10, 676)
     biases = w[6770:6779]
+    println("Reshape Complete")
     l1 = vec(DualMatrix(convlayer(x, ker)))
     println("Conv layer complete")
     l2 = dense_layer(weights, biases, l1, softmax)
