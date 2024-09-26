@@ -92,7 +92,7 @@ function DualMatrix(x::AbstractMatrix)
     val = [y.value for y in x]
     n, m = size(x)
     jac = mortar([x[i,j].partials for i = 1:n, j = 1:m])
-    DualMatrix(sparse(val), BlockMatrixTensor(jac))
+    DualMatrix(val, BlockMatrixTensor(jac))
 end
 
 function getindex(x::DualVector, y::Int)

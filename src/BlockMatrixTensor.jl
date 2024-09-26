@@ -3,7 +3,7 @@
 using BlockArrays, SparseArrays
 
 struct BlockMatrixTensor{T} <: AbstractArray{T, 4}
-    data::AbstractBlockMatrix{T}
+    data::BlockMatrix{T}
 end
 
 function BlockMatrixTensor(x::AbstractArray{T, 4}) where {T}
@@ -33,7 +33,7 @@ for op in (:*, :/)
 end
 
 function broadcasted(f::Function, x::BlockMatrixTensor{T}, y::AbstractMatrix) where {T}
-    ret = BlockArray{T}(undef, blocksizes(x.data)...)
+    ret = copy(x.data)
     n, m = blocksize(x.data)
     if blocksize(x.data) == size(y)
         for i = 1:n, j = 1:m
@@ -58,7 +58,7 @@ function broadcasted(f::Function, x::BlockMatrixTensor{T}, y::AbstractMatrix) wh
 end
 
 function broadcasted(f::Function, x::AbstractMatrix, y::BlockMatrixTensor{T}) where {T}
-    ret = BlockArray{T}(undef, blocksizes(y.data)...)
+    ret = copy(y.data)
     n, m = blocksize(y.data)
     if blocksize(y.data) == size(x)
         for i = 1:n, j = 1:m
@@ -87,11 +87,11 @@ end
 function sum(x::BlockMatrixTensor{T}; dims = Colon()) where {T}
     if dims == 1:2
         n, m = size(x, 3), size(x, 4)
-        ret = zeros(T, n, m)
+        ret = similar(x.data[Block(1, 1)]) * 0
         for i = 1:size(x, 1), j = 1:size(x, 2)
             ret += x.data[Block(i, j)]
         end
-        sparse(ret)
+        ret
     elseif dims == 2
         n, m, s, t = size(x)
         ret = BlockArray(zeros(T, n*s, t), fill(s, n), fill(t, 1))
