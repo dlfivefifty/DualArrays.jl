@@ -90,9 +90,8 @@ DualMatrix(x::AbstractMatrix, j::AbstractArray{T,4}) where {T} = DualArray(x, j)
 
 function DualMatrix(x::AbstractMatrix)
     val = [y.value for y in x]
-    n, m = size(x)
-    jac = mortar([x[i,j].partials for i = 1:n, j = 1:m])
-    DualMatrix(val, BlockMatrixTensor(jac))
+    jac_blocks = [y.partials for y in x]
+    DualMatrix(val, BlockMatrixTensor(jac_blocks))
 end
 
 function getindex(x::DualVector, y::Int)
@@ -149,7 +148,7 @@ end
 # perturbations are reshapes of each other.
 function *(x::DualMatrix, y::DualVector)
     val = x.value * y.value
-    jac = x.value * y.jacobian + vcat(blocks(sum(x.jacobian .* y.value'; dims = 2).data)...)
+    jac = x.value * y.jacobian + flatten(sum(x.jacobian .* y.value'; dims = 2))
     DualVector(val, jac)
 end
 
@@ -256,14 +255,12 @@ end
 
 # reshape does not preserve shape of perturbations (since jacobian can have
 # any number of columns)
-
-#Should a PR be made into reshape() 
 _tomatrix(v::AbstractVector) = reshape(v, :, 1)
 
-function reshape(x::DualVector,dims::Vararg{Int})
+function reshape(x::DualVector,dims::Vararg{Int, 2})
     val = reshape(x.value, dims...)
-    jac_blockmat = [sparse_transpose(sparse_getindex(x.jacobian, i, :)) for i = 1:size(x.jacobian, 1)]
-    jac = BlockMatrixTensor(mortar(reshape(jac_blockmat, dims...)))
+    blocked_jac = BlockedMatrix(x.jacobian, fill(1, length(x)), [size(x.jacobian, 2)])
+    jac = reshape(BlockMatrixTensor(blocked_jac), dims..., :, :)
     DualMatrix(val, jac)
 end
 
@@ -272,7 +269,7 @@ _blockvec(x::BlockMatrixTensor) = vcat(blocks(x.data)...)
 
 function vec(x::DualArray)
     val = vec(x.value)
-    jac = _blockvec(x.jacobian)
+    jac = parent(reshape(x.jacobian, length(val), 1, :, :).data)
     DualVector(val, jac)
 end
 
