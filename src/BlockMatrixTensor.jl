@@ -22,7 +22,7 @@ BlockMatrixTensor(x::Matrix{T}) where {T <: AbstractMatrix} = BlockMatrixTensor(
 size(x::BlockMatrixTensor) = (blocksize(x.data)..., blocksizes(x.data)[1,1]...)
 
 #Indexing entire blocks
-getindex(x::BlockMatrixTensor, a::Int, b::Int, ::Colon, ::Colon) = blocks(x.data)[a, b]
+getindex(x::BlockMatrixTensor, a::Int, b::Int, c, d) = blocks(x.data)[a, b][c, d]
 getindex(x::BlockMatrixTensor, a::Int, b, ::Colon, ::Colon) = BlockMatrixTensor(reshape(blocks(x.data)[a, b], 1, :))
 getindex(x::BlockMatrixTensor, a, b::Int, ::Colon, ::Colon) = BlockMatrixTensor(reshape(blocks(x.data)[a, b], :, 1))
 getindex(x::BlockMatrixTensor, a, b, ::Colon, ::Colon) = BlockMatrixTensor(blocks(x.data)[a,b])
