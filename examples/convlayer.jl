@@ -41,14 +41,12 @@ function model_loss(x, y, w)
     l1 = vec(DualMatrix(convlayer(x, ker)))
     println("Conv layer complete")
     l2 = dense_layer(weights, biases, l1, softmax)
-    println(l2.jacobian)
+    println("Dense Layer Complete")
     target = OneElement(1, y+1, 10)
     loss = cross_entropy(l2, target)
     println("Loss complete")
     loss.value, loss.partials
 end
-
-#TODO: Implement remaining layers upon more support for DualMatrix
 
 function train_model()
     p = rand(6779)

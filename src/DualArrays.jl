@@ -5,7 +5,7 @@ export dropzeros
 
 import Base: +, ==, getindex, size, broadcast, axes, broadcasted, show, sum,
              vcat, convert, *, -, ^, /, ndims, hcat, vec, promote_rule, zero,
-             reshape
+             reshape, setindex!
 using LinearAlgebra, ArrayLayouts, BandedMatrices, FillArrays, ComponentArrays, SparseArrays
 import ChainRules: frule, ZeroTangent
 

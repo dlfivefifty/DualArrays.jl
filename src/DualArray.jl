@@ -259,7 +259,7 @@ _tomatrix(v::AbstractVector) = reshape(v, :, 1)
 
 function reshape(x::DualVector,dims::Vararg{Int, 2})
     val = reshape(x.value, dims...)
-    blocked_jac = BlockedMatrix(x.jacobian, fill(1, length(x)), [size(x.jacobian, 2)])
+    blocked_jac = BlockMatrix(x.jacobian, fill(1, length(x)), [size(x.jacobian, 2)])
     jac = reshape(BlockMatrixTensor(blocked_jac), dims..., :, :)
     DualMatrix(val, jac)
 end
@@ -269,7 +269,7 @@ _blockvec(x::BlockMatrixTensor) = vcat(blocks(x.data)...)
 
 function vec(x::DualArray)
     val = vec(x.value)
-    jac = parent(reshape(x.jacobian, length(val), 1, :, :).data)
+    jac = flatten(reshape(x.jacobian, length(val), 1, :, :))
     DualVector(val, jac)
 end
 

@@ -91,7 +91,7 @@ using Lux: relu
         z = x[5:6]
         @test (y*z).value == [2,2]
         @test (y*z).jacobian == [1 0 1 0 1 1; 0 1 0 1 1 1]
-        for t in (([1, 0, 0, 1, 0, 0], [1 0 -1 0 1 0;0 0 0 0 0 0]), ([1, 1, 1, 1, 1, 1], [1 0 -1 0 1 0;0 1 0 -1 0 1]), ([0, 1, 1, 0, -1, -1], zeros(2,6)))
+        for t in (([1, 0, 0, 1, 0, 0], [1 0 -1 0 1 0;0 0 0 0 0 0]), ([1, 1, 1, 1, 1, 1], [1 0 -1 0 1 0;0 1 0 -1 0 1]), ([0, 1, 1, 0, -1, -1], zeros(2, 6)))
             x = DualVector(t[1], I(6))
             y = reshape(x[1:4], 2, 2)
             z = x[5:6]
@@ -105,7 +105,7 @@ using Lux: relu
             y = BlockMatrixTensor(ones(2, 2, 2, 2))
             @test x isa BlockMatrixTensor
             @test y isa BlockMatrixTensor
-            @test x == y
+            @test x.data == y.data
         end
         @testset "broadcasting" begin
             y = BlockMatrixTensor(ones(2, 2, 2, 2))
@@ -115,10 +115,27 @@ using Lux: relu
                 [2, 2]
             )
             @test ([1 2;3 4] .* y).data == z
-            @test reshape([3], 1, 1) .* y == 3 * y
-            @test ([1 2] .* y).data == BlockArray([fill(1,4,2) fill(2,4,2)], [2, 2], [2, 2])
-            @test ([1 2]' .* y).data == BlockArray([fill(1,2,4); fill(2,2,4)], [2, 2], [2, 2])
+            @test (reshape([3], 1, 1) .* y).data == (3 * y).data
+            @test ([1 2] .* y).data == BlockArray([fill(1, 4, 2) fill(2, 4, 2)], [2, 2], [2, 2])
+            @test ([1 2]' .* y).data == BlockArray([fill(1, 2, 4); fill(2, 2, 4)], [2, 2], [2, 2])
+            @test (y .* [1, 2]).data == BlockArray([fill(1, 2, 4); fill(2, 2, 4)], [2, 2], [2, 2])
             @test_throws DimensionMismatch [1 2;3 4;5 6] .* y
+        end
+        @testset "sum" begin
+            r = rand(2, 2, 2, 2)
+            b = BlockMatrixTensor(r)
+            #TODO: Fix traversal
+            for d in (1:2, 1, 2)
+                @test sum(r; dims = 1:2)[1, 1, :, :] ≈ sum(b; dims = 1:2)
+            end
+        end
+
+        @testset "reshape" begin
+            r= rand(3, 4, 2, 2)
+            b = BlockMatrixTensor(r)
+            for d in ((2, 6), (1, 12), (6, 2), (12, 1))
+                @test BlockMatrixTensor(reshape(r, d..., 2, 2)).data == reshape(b, d..., :, :).data
+            end
         end
     end
 end
